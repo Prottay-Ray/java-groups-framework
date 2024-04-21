@@ -15,6 +15,7 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
     private static final long serialVersionUID = -6550531918397868278L;
 
     private static final int DEFAULT_CAPACITY = 10;
+
     private static final Object[] EMPTY_ELEMENTS = {};
 
     private transient Object[] elements = EMPTY_ELEMENTS;
@@ -26,32 +27,44 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
     private transient int capacity;
 
     public ArraySequence() {
-        setCapacity(DEFAULT_CAPACITY);
+        initialize(DEFAULT_CAPACITY);
     }
 
     public ArraySequence(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Negative capacity : " + capacity);
         }
-        setCapacity(capacity == 0
+        initialize(capacity == 0
                 ? DEFAULT_CAPACITY
                 : capacity);
     }
 
     public ArraySequence(Group<? extends R> group) {
         if (GroupUtils.isEmpty(group)) {
-            setCapacity(DEFAULT_CAPACITY);
+            initialize(DEFAULT_CAPACITY);
         } else {
             int groupSize = group.size();
-            setCapacity(groupSize < DEFAULT_CAPACITY
+            initialize(groupSize < DEFAULT_CAPACITY
                     ? DEFAULT_CAPACITY
-                    : groupSize + 10); // groupSize + 10 logic to be modified and improved
+                    : groupSize + (groupSize >> 1));
             addAll(group);
         }
     }
 
-    private void setCapacity(int capacity) {
+    private void initialize(int capacity) {
+        size = 0;
         this.elements = new Object[this.capacity = capacity];
+    }
+
+    public void ensureCapacity(int minCapacity) {
+        if (minCapacity > capacity) {
+            modify();
+            Object[] elements = new Object[capacity = minCapacity];
+            for (int i = 0; i < size; i++) {
+                elements[i] = this.elements[i];
+            }
+            this.elements = elements;
+        }
     }
 
     public int size() {
@@ -64,7 +77,7 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
 
     public boolean add(R element) {
         modify();
-        int index = expandedIndex();
+        int index = incrementCursor();
         elements[index] = element;
         return true;
     }
@@ -73,6 +86,10 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
         int index = indexOf(element);
         if (index < 0) {
             return false;
+        }
+        if (size() == 1) {
+            clear();
+            return true;
         }
         modify();
         for (int i = index + 1; i < size; i++) {
@@ -103,16 +120,24 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
     }
 
     public boolean retainAll(Group<?> c) {
+
         return false;
     }
 
     public void clear() {
-        size = 0;
+        modify();
         elements = EMPTY_ELEMENTS;
-        setCapacity(DEFAULT_CAPACITY);
+        initialize(DEFAULT_CAPACITY);
     }
 
-    public boolean addAll(int index, Group<? extends R> c) {
+    public boolean addAll(int index, Group<? extends R> group) {
+        validateIndex(index);
+        if (group == null) {
+            return false;
+        }
+        for (R k : group) {
+            add(index, k);
+        }
         return false;
     }
 
@@ -138,30 +163,52 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
     }
 
     public void add(int index, R element) {
+        modify();
         validateIndex(index);
+        int lastIndex = incrementCursor();
+        for (int i = lastIndex; i > index; i--) {
+            elements[i] = elements[i - 1];
+        }
+        elements[index] = element;
     }
 
-    public int expandedIndex() {
-        if (size >= capacity) {
-            expand();
+    public int incrementCursor() {
+        expand();
+        if (isEmpty() || elements == EMPTY_ELEMENTS) {
+            initialize(DEFAULT_CAPACITY);
         }
         return size++;
     }
 
-    public void expand() {
-        int newCapacity = capacity + (capacity >> 2);
-        Object[] newElements = new Object[newCapacity];
-        for (int i = 0; i < size(); i++) {
-            newElements[i] = elements[i];
+    public int decrementCursor() {
+        if (--size == 0) {
+            clear();
         }
-        elements = newElements;
-        capacity = newCapacity;
+        return size;
     }
 
-    public R remove(int index) {
-        validateIndex(index);
+    public void expand() {
+        if (size >= capacity) {
+            int newCapacity = capacity + (capacity >> 1);
+            Object[] newElements = new Object[newCapacity];
+            for (int i = 0; i < size(); i++) {
+                newElements[i] = elements[i];
+            }
+            elements = newElements;
+            capacity = newCapacity;
+        }
+    }
 
-        return null;
+    @SuppressWarnings("unchecked")
+    public R remove(int index) {
+        modify();
+        validateIndex(index);
+        Object element = elements[index];
+        for (int i = index + 1; i < size(); i++) {
+            elements[i - 1] = elements[i];
+        }
+        decrementCursor();
+        return (R) element;
     }
 
     public int indexOf(Object o) {
@@ -174,7 +221,7 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
     }
 
     public int lastIndexOf(Object o) {
-        for (int i = size() -  1; i >= 0; i--) {
+        for (int i = size() - 1; i >= 0; i--) {
             if (Objects.equals(elements[i], o)) {
                 return i;
             }
@@ -219,8 +266,6 @@ public class ArraySequence<R> extends GenericAbstractSequence<R>
         for (int i = 0; i < size(); i++) {
             objectArray[i] = get(i);
         }
-        List<String> s = new ArrayList<>();
-        s.add(null);
         return objectArray;
     }
 

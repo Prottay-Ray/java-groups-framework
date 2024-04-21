@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bdb5c2ee-eec5-4dee-bc6c-27594860e9c7" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/groupframework/group/FailFast.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/groupframework/group/sequence/FailFastIterator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/groupframework/group/sequence/GenericAbstractSequence.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/groupframework/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/groupframework/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/groupframework/group/ArraySequence.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/groupframework/group/sequence/ArraySequence.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/groupframework/group/FailFastGroup.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/groupframework/group/FailFastIterator.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/groupframework/group/Sequence.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/groupframework/group/sequence/Sequence.java" afterDir="false" />
-    </list>
+    <list default="true" id="bdb5c2ee-eec5-4dee-bc6c-27594860e9c7" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
