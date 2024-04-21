@@ -1,18 +1,15 @@
-package org.groupframework.group;
+package org.groupframework.group.sequence;
 
 import org.groupframework.exception.OutOfBoundsException;
+import org.groupframework.group.Group;
 import org.groupframework.utils.GroupUtils;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Objects;
-import java.util.RandomAccess;
+import java.util.*;
 
-public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAccess,
-        Serializable, Cloneable {
+public class ArraySequence<R> extends GenericAbstractSequence<R>
+        implements Sequence<R>, RandomAccess, Serializable, Cloneable {
 
     @Serial
     private static final long serialVersionUID = -6550531918397868278L;
@@ -27,8 +24,6 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
 
     // This tells the current length of the backing array
     private transient int capacity;
-
-    private transient int modCount;
 
     public ArraySequence() {
         setCapacity(DEFAULT_CAPACITY);
@@ -68,18 +63,42 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
     }
 
     public boolean add(R element) {
-        return false;
+        modify();
+        int index = expandedIndex();
+        elements[index] = element;
+        return true;
     }
 
     public boolean remove(Object element) {
-        return false;
+        int index = indexOf(element);
+        if (index < 0) {
+            return false;
+        }
+        modify();
+        for (int i = index + 1; i < size; i++) {
+            elements[i - 1] = elements[i];
+        }
+        size--;
+        return true;
     }
 
     public boolean addAll(Group<? extends R> elements) {
+        if (GroupUtils.isNotEmpty(elements)) {
+            for (R element : elements) {
+                add(element);
+            }
+            return true;
+        }
         return false;
     }
 
     public boolean removeAll(Group<?> elements) {
+        if (GroupUtils.isNotEmpty(elements)) {
+            for (Object element : elements) {
+                remove(element);
+            }
+            return true;
+        }
         return false;
     }
 
@@ -111,12 +130,32 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
 
     public R set(int index, R element) {
         validateIndex(index);
-
-        return null;
+        modify();
+        @SuppressWarnings("unchecked")
+        R oldValue = (R) elements[index];
+        elements[index] = element;
+        return oldValue;
     }
 
     public void add(int index, R element) {
         validateIndex(index);
+    }
+
+    public int expandedIndex() {
+        if (size >= capacity) {
+            expand();
+        }
+        return size++;
+    }
+
+    public void expand() {
+        int newCapacity = capacity + (capacity >> 2);
+        Object[] newElements = new Object[newCapacity];
+        for (int i = 0; i < size(); i++) {
+            newElements[i] = elements[i];
+        }
+        elements = newElements;
+        capacity = newCapacity;
     }
 
     public R remove(int index) {
@@ -126,20 +165,21 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
     }
 
     public int indexOf(Object o) {
-        if (!isEmpty()) {
-            int i = -1;
-            for (R r : this) {
-                i++;
-                if (Objects.equals(r, o)) {
-                    return i;
-                }
+        for (int i = 0; i < size(); i++) {
+            if (Objects.equals(elements[i], o)) {
+                return i;
             }
         }
         return -1;
     }
 
     public int lastIndexOf(Object o) {
-        return 0;
+        for (int i = size() -  1; i >= 0; i--) {
+            if (Objects.equals(elements[i], o)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public ListIterator<R> listIterator() {
@@ -158,15 +198,20 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
     }
 
     public boolean contains(Object k) {
-        return false;
+        return indexOf(k) >= 0;
     }
 
     public boolean containsAll(Group<?> k) {
-        return false;
+        for (Object o : k) {
+            if (indexOf(o) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public Iterator<R> iterator() {
-        return null;
+        return new FailFastIterator<>(structuralModificationCount, this);
     }
 
     public Object[] toArray() {
@@ -174,6 +219,8 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
         for (int i = 0; i < size(); i++) {
             objectArray[i] = get(i);
         }
+        List<String> s = new ArrayList<>();
+        s.add(null);
         return objectArray;
     }
 
@@ -182,21 +229,16 @@ public class ArraySequence<R> implements Sequence<R>, FailFastGroup<R>, RandomAc
     }
 
     @Override
-    public int getModCount() {
-        return modCount;
-    }
-
-    @Override
     public R getCursorElement(int index) {
         return get(index);
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public ArraySequence<R> clone() {
         try {
-            ArraySequence clone = (ArraySequence) super.clone();
             // TODO: copy mutable state here, so the clone can't change the internals of the original
-            return clone;
+            return (ArraySequence) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }

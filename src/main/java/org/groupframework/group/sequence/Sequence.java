@@ -1,6 +1,13 @@
-package org.groupframework.group;
+package org.groupframework.group.sequence;
 
-import java.util.*;
+import org.groupframework.group.Group;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 public interface Sequence<R> extends Group<R> {
